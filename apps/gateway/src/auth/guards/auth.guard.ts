@@ -5,7 +5,6 @@ import {
     UnauthorizedException,
   } from '@nestjs/common';
   import { JwtService } from '@nestjs/jwt';
-  import { jwtConstants } from '../constants/constants';
   import { Request } from 'express';
   
   @Injectable()
@@ -16,17 +15,19 @@ import {
       const request = context.switchToHttp().getRequest();
       const token = this.extractTokenFromHeader(request);
       if (!token) {
+        console.log(process.env.JWT_KEY)
         throw new UnauthorizedException();
       }
       try {
         const payload = await this.jwtService.verifyAsync(
           token,
           {
-            secret: jwtConstants.secret
+            secret: process.env.JWT_KEY
           }
         );
         request['user'] = payload;
       } catch {
+        console.log(process.env.JWT_KEY)
         throw new UnauthorizedException();
       }
       return true;

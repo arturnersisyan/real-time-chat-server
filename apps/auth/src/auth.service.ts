@@ -61,7 +61,6 @@ export class AuthService {
   }
 
   async signIn(data): Promise<{ access_token: string }> {
-
     let user;
     try {
       user = await this.userRepository.findOne({
