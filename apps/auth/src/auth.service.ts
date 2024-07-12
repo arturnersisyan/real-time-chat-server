@@ -49,7 +49,6 @@ export class AuthService {
     user.age = data.age;
 
     user.password = hashedPassword;
-
     try {
       await this.userRepository.save(user);
     } catch (err) {

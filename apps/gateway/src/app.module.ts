@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants/constants';
 
@@ -10,26 +10,35 @@ import { jwtConstants } from './constants/constants';
   imports: [
     ConfigModule.forRoot({
       envFilePath: './.env',
+      isGlobal: true
     }),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
+        imports: [ConfigModule],
         name: 'GATEWAY_SERVICE',
-        transport: Transport.RMQ,
-        options: {
-          urls: [
-            'amqps://ttznfbkl:QbuRWAElGrVT8zhYD3yokD73SQtA7zFk@moose.rmq.cloudamqp.com/ttznfbkl',
-          ],
-          queue: 'auth_queue',
-          queueOptions: {
-            durable: false,
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [
+              configService.get<string>('RMQT_ULR'),
+            ],
+            queue: 'auth_queue',
+            queueOptions: {
+              durable: false,
+            },
           },
-        },
+        }),
+        inject: [ConfigService]
       },
     ]),
-    JwtModule.register({
-      global: true,
-      secret: jwtConstants.secret,
-      signOptions: { expiresIn: '24h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        global: true,
+        secret: configService.get<string>('JWT_KEY'),
+        signOptions: { expiresIn: '24h' },
+      }),
+      inject: [ConfigService]
     }),
   ],
   controllers: [AppController],

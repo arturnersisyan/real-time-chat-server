@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
@@ -11,18 +11,23 @@ import { jwtConstants } from './constants/constants';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: './.env',
+      envFilePath: './apps/auth/src/.env',
+      isGlobal: true
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      password: 'admin_admin',
-      username: 'postgres',
-      entities: [User],
-      database: 'postgres',
-      synchronize: true,
-      logging: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('PG_HOST'),
+        port: +configService.get('PG_PORT'),
+        password: configService.get('PG_PASSWORD'),
+        username: configService.get('PG_USERNAME'),
+        entities: [User],
+        database: 'postgres',
+        synchronize: true,
+        logging: true,
+      }),
+      inject: [ConfigService]
     }),
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
